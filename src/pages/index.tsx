@@ -1,12 +1,21 @@
 /* eslint-disable @next/next/no-img-element */
 import React from "react";
-import type { NextPage } from "next";
+import type { GetStaticProps, NextPage } from "next";
 import Head from "next/head";
 
-import styles from "@styles/homePage.module.scss";
 import { SubscribeButton } from "@components/SubscribeButton";
+import { stripe } from "@services/stripe";
 
-const Home: NextPage = () => {
+import styles from "@styles/homePage.module.scss";
+
+type HomeProps = {
+  product: {
+    priceId: string;
+    amount: number;
+  };
+};
+
+const Home: NextPage<HomeProps> = ({ product }) => {
   return (
     <>
       <Head>
@@ -24,15 +33,34 @@ const Home: NextPage = () => {
           </h1>
           <p>
             Get access to all the publications <br />
-            <span>for $9.90 month</span>
+            <span>for {product.amount} month</span>
           </p>
-          <SubscribeButton />
+          <SubscribeButton priceId={product.priceId} />
         </section>
 
         <img src="/images/avatar.svg" alt="Girl Coding" />
       </main>
     </>
   );
+};
+
+export const getStaticProps: GetStaticProps = async (ctx) => {
+  const price = await stripe.prices.retrieve("price_1JW3inEaAVsrQeqgifAubhQP");
+
+  const product = {
+    priceId: price.id,
+    amount: new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(Number(price.unit_amount) / 100),
+  };
+
+  return {
+    props: {
+      product,
+    },
+    revalidate: 60 * 60 * 24, // seconds * minuts * hours - will revalidate every 24hrs
+  };
 };
 
 export default Home;
