@@ -1,9 +1,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { getSession } from "next-auth/client";
+import { query } from "faunadb";
 
 import { stripe } from "@services/stripe";
 import { fauna } from "@services/fauna";
-import { query } from "faunadb";
 
 type User = {
   ref: {
@@ -41,17 +41,18 @@ export default async function Subscribe(
       )
     )
   );
+  const userRefId = user.ref.id;
 
   let customerId = user.data.stripe_customer_id;
-  if (!customerId) {
+  if (typeof customerId === "undefined") {
     const stripeCostumer = await stripe.customers.create({
       email: String(session.user.email),
     });
 
     await fauna.query(
-      query.Update(query.Ref(query.Collection("users", user.ref.id)), {
+      query.Update(query.Ref(query.Collection("users"), userRefId), {
         data: {
-          stripe_costumer_id: stripeCostumer.id,
+          stripe_customer_id: stripeCostumer.id,
         },
       })
     );
