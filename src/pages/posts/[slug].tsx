@@ -1,6 +1,10 @@
-import { GetServerSideProps, GetStaticPaths, NextPage } from "next";
+import { GetServerSideProps, NextPage } from "next";
 import Head from "next/head";
-import { getSession } from "next-auth/client";
+import { useSession, signIn, getSession } from "next-auth/client";
+import { useRouter } from "next/router";
+
+import { api } from "@services/api";
+import { getStripeJs } from "@services/stripe-js";
 import { RichText } from "prismic-dom";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -17,9 +21,38 @@ type PostProps = {
     content: string;
     updatedAt: string;
   };
+  canSeeAll: boolean;
 };
 
-const Post: NextPage<PostProps> = ({ post }) => {
+const Post: NextPage<PostProps> = ({ post, canSeeAll }) => {
+  const [session] = useSession();
+  const router = useRouter();
+
+  async function handleSubscribe() {
+    if (!session) {
+      signIn("github");
+      return;
+    }
+
+    if (session.activeSubscription) {
+      router.push("/posts");
+      return;
+    }
+
+    try {
+      const response = await api.post("/subscribe");
+
+      const { sessionId } = response.data;
+      const stripe = await getStripeJs();
+
+      await stripe?.redirectToCheckout({ sessionId });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        alert(error.message);
+      }
+    }
+  }
+
   return (
     <>
       <Head>
@@ -34,9 +67,19 @@ const Post: NextPage<PostProps> = ({ post }) => {
           <time>{post.updatedAt}</time>
 
           <div
-            className={styles.postContent}
+            className={`${styles.postContent} ${
+              !canSeeAll && styles.previewContent
+            }`}
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
+          {!canSeeAll && (
+            <button
+              onClick={handleSubscribe}
+              className={styles.continueReading}
+            >
+              Wanna continue reading? <span>Subscribe now</span> 🤗
+            </button>
+          )}
         </article>
       </main>
     </>
@@ -58,15 +101,23 @@ export const getServerSideProps: GetServerSideProps = async ({
   const prismic = getPrismicClient(req);
   const response = await prismic.getByUID("post", slug, {});
 
-  const excerpt =
-    response.data.content.find(
-      (content: { type: string }) => content.type === "paragraph"
-    )?.text ?? "";
+  const firstParagraph = response.data.content.find(
+    (content: { type: string }) => content.type === "paragraph"
+  );
+  const excerpt = firstParagraph?.text ?? "";
+  const canSeeAll =
+    session && session.activeSubscription !== null ? true : false;
+
+  const content =
+    !session || !session.activeSubscription
+      ? RichText.asHtml(response.data.content.splice(0, 3))
+      : RichText.asHtml(response.data.content);
+
   const post = {
     slug,
     title: RichText.asText(response.data.title),
     excerpt: `${excerpt.substring(0, 130)}...`,
-    content: RichText.asHtml(response.data.content),
+    content,
     updatedAt: format(
       parseISO(String(response.last_publication_date)),
       "d 'de' MMMM 'de' yyyy",
@@ -79,6 +130,7 @@ export const getServerSideProps: GetServerSideProps = async ({
   return {
     props: {
       post,
+      canSeeAll,
     },
   };
 };
