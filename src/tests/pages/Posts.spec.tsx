@@ -56,13 +56,12 @@ describe("Posts page", () => {
             {
               slug: "my-new-post",
               title: "My new post",
-              excerpt: "Post excerpt",
+              excerpt: "Post excerpt...",
               updatedAt: "01 de abril de 2021",
             },
           ],
         },
       })
     );
-    expect(screen.getByText("Wanna continue reading?")).toBeInTheDocument();
   });
 });
