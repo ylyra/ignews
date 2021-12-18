@@ -3,15 +3,15 @@ import React from "react";
 import type { GetStaticProps, NextPage } from "next";
 import Head from "next/head";
 
-import { SubscribeButton } from "@components/SubscribeButton";
-import { stripe } from "@services/stripe";
+import { SubscribeButton } from "../components/SubscribeButton";
+import { stripe } from "../services/stripe";
 
-import styles from "@styles/homePage.module.scss";
+import styles from "../styles/homePage.module.scss";
 
 type HomeProps = {
   product: {
     priceId: string;
-    amount: number;
+    amount: string;
   };
 };
 
@@ -34,7 +34,7 @@ const Home: NextPage<HomeProps> = ({ product }) => {
             Get access to all the publications <br />
             <span>for {product.amount} month</span>
           </p>
-          <SubscribeButton priceId={product.priceId} />
+          <SubscribeButton />
         </section>
 
         <img src="/images/avatar.svg" alt="Girl Coding" />

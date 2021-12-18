@@ -6,7 +6,7 @@ import { RichText } from "prismic-dom";
 import { format, parseISO } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
 
-import { getPrismicClient } from "@services/prismic";
+import { getPrismicClient } from "../../services/prismic";
 
 import styles from "./styles.module.scss";
 

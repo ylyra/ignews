@@ -2,14 +2,13 @@ import { GetServerSideProps, NextPage } from "next";
 import Head from "next/head";
 import { useSession, signIn, getSession } from "next-auth/client";
 import { useRouter } from "next/router";
-
-import { api } from "@services/api";
-import { getStripeJs } from "@services/stripe-js";
 import { RichText } from "prismic-dom";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-import { getPrismicClient } from "@services/prismic";
+import { api } from "../../services/api";
+import { getStripeJs } from "../../services/stripe-js";
+import { getPrismicClient } from "../../services/prismic";
 
 import styles from "./post.module.scss";
 
@@ -95,7 +94,6 @@ export const getServerSideProps: GetServerSideProps = async ({
   params,
 }) => {
   const session = await getSession({ req });
-
   const { slug } = params as Params;
 
   const prismic = getPrismicClient(req);

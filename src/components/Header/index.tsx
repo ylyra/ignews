@@ -1,7 +1,7 @@
 import Image from "next/image";
 
-import { SignInButton } from "@components/SignInButton";
-import { ActiveLink } from "@components/ActiveLink";
+import { SignInButton } from "../SignInButton";
+import { ActiveLink } from "../ActiveLink";
 
 import styles from "./styles.module.scss";
 
